@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Eye, MapPin, Building, BookOpen, Coffee, Dumbbell, Home, GraduationCap, Compass, Target, Navigation } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ARView from '@/components/ARView';
+import AddLocationDialog from '@/components/AddLocationDialog';
 
 // MITS Gwalior coordinates (approximate)
 const CAMPUS_CENTER: [number, number] = [26.2124, 78.1772];
@@ -16,6 +17,7 @@ interface CampusLocation {
   longitude: number;
   description: string | null;
   floor_info: string | null;
+  image_url: string | null;
 }
 
 const categoryColors: Record<string, string> = {
@@ -55,18 +57,19 @@ const Maps = () => {
   const [loading, setLoading] = useState(true);
   const [showAR, setShowAR] = useState(false);
 
+  const fetchLocations = async () => {
+    const { data, error } = await supabase
+      .from('campus_locations')
+      .select('*')
+      .order('name');
+    
+    if (data && !error) {
+      setCampusLocations(data);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchLocations = async () => {
-      const { data, error } = await supabase
-        .from('campus_locations')
-        .select('*')
-        .order('name');
-      
-      if (data && !error) {
-        setCampusLocations(data);
-      }
-      setLoading(false);
-    };
     fetchLocations();
   }, []);
 
@@ -236,10 +239,13 @@ const Maps = () => {
 
         {/* Locations List */}
         <div className="mt-6 bg-card rounded-xl border border-border p-6">
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            All Campus Locations
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              All Campus Locations
+            </h3>
+            <AddLocationDialog onLocationAdded={fetchLocations} />
+          </div>
           {campusLocations.length === 0 ? (
             <p className="text-muted-foreground text-sm">No locations added yet.</p>
           ) : (
@@ -256,15 +262,23 @@ const Maps = () => {
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${categoryColors[location.category] || categoryColors.other}20` }}
-                    >
-                      <CategoryIcon
-                        className="w-5 h-5"
-                        style={{ color: categoryColors[location.category] || categoryColors.other }}
+                    {location.image_url ? (
+                      <img
+                        src={location.image_url}
+                        alt={location.name}
+                        className="w-10 h-10 rounded-lg object-cover shrink-0"
                       />
-                    </div>
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${categoryColors[location.category] || categoryColors.other}20` }}
+                      >
+                        <CategoryIcon
+                          className="w-5 h-5"
+                          style={{ color: categoryColors[location.category] || categoryColors.other }}
+                        />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <h4 className="font-medium text-foreground text-sm truncate">{location.name}</h4>
                       <p className="text-xs text-muted-foreground truncate">{location.description || location.category}</p>

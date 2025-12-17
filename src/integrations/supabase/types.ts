@@ -21,6 +21,7 @@ export type Database = {
           description: string | null
           floor_info: string | null
           id: string
+          image_url: string | null
           latitude: number
           longitude: number
           name: string
@@ -31,6 +32,7 @@ export type Database = {
           description?: string | null
           floor_info?: string | null
           id?: string
+          image_url?: string | null
           latitude: number
           longitude: number
           name: string
@@ -41,6 +43,7 @@ export type Database = {
           description?: string | null
           floor_info?: string | null
           id?: string
+          image_url?: string | null
           latitude?: number
           longitude?: number
           name?: string
