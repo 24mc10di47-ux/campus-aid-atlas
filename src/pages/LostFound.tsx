@@ -17,10 +17,10 @@ interface LostFoundItem {
   description: string;
   image_url: string | null;
   location: string | null;
-  contact_info: string;
+  contact_info: string | null;
   status: string;
   created_at: string;
-  user_id: string;
+  user_id?: string;
 }
 
 const LostFound = () => {
@@ -28,6 +28,7 @@ const LostFound = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [items, setItems] = useState<LostFoundItem[]>([]);
+  const [userItems, setUserItems] = useState<LostFoundItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'lost' | 'found'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,18 +48,40 @@ const LostFound = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    if (user) {
+      fetchItems();
+    }
+  }, [user]);
 
   const fetchItems = async () => {
-    const { data, error } = await supabase
+    // Fetch public browsing view (no contact info)
+    const { data: publicData } = await supabase
+      .from('browse_lost_found_items' as any)
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Fetch user's own items (with full contact info)
+    const { data: ownData } = await supabase
       .from('lost_found_items')
       .select('*')
+      .eq('user_id', user?.id || '')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setItems(data as LostFoundItem[]);
+    if (ownData) {
+      setUserItems(ownData as LostFoundItem[]);
+    }
+
+    // Merge: replace public items with user's own items where applicable
+    if (publicData) {
+      const userItemIds = new Set(ownData?.map(i => i.id) || []);
+      const mergedItems = publicData.map((item: any) => {
+        if (userItemIds.has(item.id)) {
+          return ownData?.find(i => i.id === item.id) || item;
+        }
+        return { ...item, contact_info: null };
+      });
+      setItems(mergedItems as LostFoundItem[]);
     }
     setLoading(false);
   };
@@ -158,7 +181,11 @@ const LostFound = () => {
                 <h3 className="font-semibold text-foreground mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
                 {item.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2"><MapPin className="w-3 h-3" />{item.location}</p>}
-                <p className="text-xs text-primary flex items-center gap-1"><Phone className="w-3 h-3" />{item.contact_info}</p>
+                {item.contact_info ? (
+                  <p className="text-xs text-primary flex items-center gap-1"><Phone className="w-3 h-3" />{item.contact_info}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Contact info hidden for privacy</p>
+                )}
               </div>
             </div>
           ))}
