@@ -397,7 +397,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_club_members: {
+        Row: {
+          club_id: string | null
+          id: string | null
+          joined_at: string | null
+          name: string | null
+          position: string | null
+          role: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          id?: string | null
+          joined_at?: string | null
+          name?: string | null
+          position?: string | null
+          role?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          id?: string | null
+          joined_at?: string | null
+          name?: string | null
+          position?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
