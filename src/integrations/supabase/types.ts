@@ -397,6 +397,39 @@ export type Database = {
       }
     }
     Views: {
+      browse_lost_found_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          location: string | null
+          status: string | null
+          title: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       public_club_members: {
         Row: {
           club_id: string | null
@@ -431,6 +464,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_lost_found_items: {
+        Row: {
+          contact_info: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          location: string | null
+          status: string | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contact_info?: never
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contact_info?: never
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          status?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       public_profiles: {
         Row: {
