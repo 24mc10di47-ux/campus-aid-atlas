@@ -2,43 +2,35 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MapPin, Search, Users, ShoppingBag, GraduationCap, ChevronDown } from 'lucide-react';
 import heroCampus from '@/assets/college-campus.png';
-
 const Landing = () => {
-  const features = [
-    {
-      icon: MapPin,
-      title: 'Campus Maps',
-      description: 'Navigate campus with ease. Find buildings, classrooms, and facilities instantly.',
-    },
-    {
-      icon: Search,
-      title: 'Lost & Found',
-      description: 'Report lost items or help reunite found belongings with their owners.',
-    },
-    {
-      icon: Users,
-      title: 'Club Information',
-      description: 'Explore student clubs, upcoming events, and recruitment opportunities.',
-    },
-    {
-      icon: ShoppingBag,
-      title: 'Campus Shops',
-      description: 'Discover on-campus shops, canteens, menus, and timings.',
-    },
-  ];
-
+  const features = [{
+    icon: MapPin,
+    title: 'Campus Maps',
+    description: 'Navigate campus with ease. Find buildings, classrooms, and facilities instantly.'
+  }, {
+    icon: Search,
+    title: 'Lost & Found',
+    description: 'Report lost items or help reunite found belongings with their owners.'
+  }, {
+    icon: Users,
+    title: 'Club Information',
+    description: 'Explore student clubs, upcoming events, and recruitment opportunities.'
+  }, {
+    icon: ShoppingBag,
+    title: 'Campus Shops',
+    description: 'Discover on-campus shops, canteens, menus, and timings.'
+  }];
   const scrollToFeatures = () => {
-    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('features')?.scrollIntoView({
+      behavior: 'smooth'
+    });
   };
-
-  return (
-    <div className="min-h-screen">
+  return <div className="min-h-screen">
       {/* Hero Section */}
       <section className="hero-section">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${heroCampus})` }}
-        />
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
+        backgroundImage: `url(${heroCampus})`
+      }} />
         <div className="hero-overlay" />
         
         {/* Navigation */}
@@ -95,10 +87,7 @@ const Landing = () => {
         </div>
 
         {/* Scroll Indicator */}
-        <button 
-          onClick={scrollToFeatures}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-primary-foreground/60 hover:text-primary-foreground transition-colors animate-bounce"
-        >
+        <button onClick={scrollToFeatures} className="absolute bottom-8 left-1/2 -translate-x-1/2 text-primary-foreground/60 hover:text-primary-foreground transition-colors animate-bounce">
           <ChevronDown className="w-8 h-8" />
         </button>
       </section>
@@ -115,19 +104,15 @@ const Landing = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div 
-                key={feature.title} 
-                className="module-card group"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
+            {features.map((feature, index) => <div key={feature.title} className="module-card group" style={{
+            animationDelay: `${index * 100}ms`
+          }}>
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
                   <feature.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors" />
                 </div>
                 <h3 className="font-display text-xl font-semibold mb-3 text-foreground">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -166,14 +151,10 @@ const Landing = () => {
                 <p className="text-background/60 text-sm">Student Portal</p>
               </div>
             </div>
-            <p className="text-background/60 text-sm">
-              © 2024 MITS Student Portal. All rights reserved.
-            </p>
+            <p className="text-background/60 text-sm">© 2025 MITS Student Portal. All rights reserved.</p>
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Landing;
