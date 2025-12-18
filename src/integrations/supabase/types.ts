@@ -470,7 +470,6 @@ export type Database = {
       }
       public_lost_found_items: {
         Row: {
-          contact_info: string | null
           created_at: string | null
           description: string | null
           id: string | null
@@ -483,7 +482,6 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          contact_info?: never
           created_at?: string | null
           description?: string | null
           id?: string | null
@@ -496,7 +494,6 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          contact_info?: never
           created_at?: string | null
           description?: string | null
           id?: string | null
