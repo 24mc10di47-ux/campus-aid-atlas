@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, X, Loader2 } from 'lucide-react';
@@ -11,7 +11,7 @@ interface ImageUploadProps {
   className?: string;
 }
 
-const ImageUpload = ({ value, onChange, folder = 'uploads', className }: ImageUploadProps) => {
+const ImageUpload = forwardRef<HTMLDivElement, ImageUploadProps>(({ value, onChange, folder = 'uploads', className }, ref) => {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -62,7 +62,7 @@ const ImageUpload = ({ value, onChange, folder = 'uploads', className }: ImageUp
   };
 
   return (
-    <div className={className}>
+    <div ref={ref} className={className}>
       <input
         ref={inputRef}
         type="file"
@@ -106,6 +106,8 @@ const ImageUpload = ({ value, onChange, folder = 'uploads', className }: ImageUp
       )}
     </div>
   );
-};
+});
+
+ImageUpload.displayName = 'ImageUpload';
 
 export default ImageUpload;
