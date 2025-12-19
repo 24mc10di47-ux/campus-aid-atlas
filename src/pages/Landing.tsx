@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MapPin, Search, Users, ShoppingBag, GraduationCap, ChevronDown } from 'lucide-react';
 import heroCampus from '@/assets/college-campus.png';
+import ThemeToggle from '@/components/ThemeToggle';
+
 const Landing = () => {
   const features = [{
     icon: MapPin,
@@ -45,7 +47,8 @@ const Landing = () => {
                 <p className="text-primary-foreground/70 text-sm">Student Portal</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Link to="/maps">
                 <Button variant="heroOutline" size="sm">
                   <MapPin className="w-4 h-4" />

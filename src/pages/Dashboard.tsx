@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { MapPin, Search, Users, ShoppingBag, LogOut, GraduationCap, User } from 'lucide-react';
-
+import ThemeToggle from '@/components/ThemeToggle';
 const Dashboard = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
@@ -84,6 +84,7 @@ const Dashboard = () => {
                 </div>
                 <span className="hidden sm:inline text-muted-foreground">{user?.email}</span>
               </div>
+              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline ml-2">Sign Out</span>
