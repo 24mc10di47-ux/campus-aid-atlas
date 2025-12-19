@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ShoppingBag, Clock, MapPin, Phone, Plus, Send } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Clock, MapPin, Phone, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,6 @@ interface Shop {
   closing_time: string | null; 
   contact: string | null;
   image_url: string | null;
-  status?: string;
 }
 interface ShopItem { id: string; name: string; price: number; category: string | null; is_available: boolean | null; }
 
@@ -43,7 +42,6 @@ const Shops = () => {
     closing_time: '',
     contact: '',
     image_url: null as string | null,
-    faculty_email: '',
   });
 
   useEffect(() => {
@@ -64,21 +62,17 @@ const Shops = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast({ title: 'Please sign in', description: 'You must be logged in to submit a shop.', variant: 'destructive' });
+      toast({ title: 'Please sign in', description: 'You must be logged in to add a shop.', variant: 'destructive' });
       return;
     }
-    if (!formData.name || !formData.category || !formData.faculty_email) {
-      toast({ title: 'Missing fields', description: 'Name, category, and faculty email are required.', variant: 'destructive' });
-      return;
-    }
-    if (!formData.faculty_email.endsWith('@mitsgwalior.in')) {
-      toast({ title: 'Invalid email', description: 'Faculty email must end with @mitsgwalior.in', variant: 'destructive' });
+    if (!formData.name || !formData.category) {
+      toast({ title: 'Missing fields', description: 'Name and category are required.', variant: 'destructive' });
       return;
     }
 
     setSubmitting(true);
     try {
-      const { data: shop, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('shops')
         .insert({
           name: formData.name,
@@ -89,36 +83,20 @@ const Shops = () => {
           closing_time: formData.closing_time || null,
           contact: formData.contact || null,
           image_url: formData.image_url,
-          status: 'pending',
+          status: 'approved',
           submitted_by: user.id,
-        })
-        .select()
-        .single();
+        });
 
       if (insertError) throw insertError;
 
-      const { data: profile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single();
-
-      await supabase.functions.invoke('send-approval-email', {
-        body: {
-          itemType: 'shop',
-          itemId: shop.id,
-          itemName: formData.name,
-          submitterName: profile?.full_name || 'User',
-          submitterEmail: profile?.email || user.email,
-          facultyEmail: formData.faculty_email,
-          description: formData.description,
-        },
-      });
-
-      toast({ title: 'Shop submitted!', description: 'A faculty member will review your submission.' });
+      toast({ title: 'Shop added!', description: 'Your shop has been added successfully.' });
       setDialogOpen(false);
-      setFormData({ name: '', description: '', category: '', location: '', opening_time: '', closing_time: '', contact: '', image_url: null, faculty_email: '' });
+      setFormData({ name: '', description: '', category: '', location: '', opening_time: '', closing_time: '', contact: '', image_url: null });
       
       const { data: shopsData } = await supabase.from('shops').select('*').order('name');
       if (shopsData) setShops(shopsData);
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to submit shop', variant: 'destructive' });
+      toast({ title: 'Error', description: err.message || 'Failed to add shop', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -141,7 +119,7 @@ const Shops = () => {
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Submit New Shop</DialogTitle>
+                  <DialogTitle>Add New Shop</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div><Label>Shop Name *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter shop name" /></div>
@@ -165,12 +143,7 @@ const Shops = () => {
                   <div><Label>Location</Label><Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="e.g., Near Main Gate" /></div>
                   <div><Label>Contact</Label><Input value={formData.contact} onChange={(e) => setFormData({ ...formData, contact: e.target.value })} placeholder="Phone number" /></div>
                   <div><Label>Shop Image</Label><ImageUpload value={formData.image_url} onChange={(url) => setFormData({ ...formData, image_url: url })} /></div>
-                  <div className="border-t border-border pt-4">
-                    <Label>Faculty Email for Approval *</Label>
-                    <Input value={formData.faculty_email} onChange={(e) => setFormData({ ...formData, faculty_email: e.target.value })} placeholder="faculty@mitsgwalior.in" type="email" />
-                    <p className="text-xs text-muted-foreground mt-1">Must be a @mitsgwalior.in email</p>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={submitting}>{submitting ? 'Submitting...' : <><Send className="w-4 h-4 mr-2" />Submit for Approval</>}</Button>
+                  <Button type="submit" className="w-full" disabled={submitting}>{submitting ? 'Adding...' : <><Plus className="w-4 h-4 mr-2" />Add Shop</>}</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -186,8 +159,7 @@ const Shops = () => {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {shops.map(shop => (
-              <div key={shop.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow relative">
-                {shop.status === 'pending' && <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full z-10">Pending</div>}
+              <div key={shop.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                 {shop.image_url ? <img src={shop.image_url} alt={shop.name} className="w-full h-48 object-cover" /> : <div className="w-full h-48 bg-primary/10 flex items-center justify-center"><ShoppingBag className="w-16 h-16 text-primary/40" /></div>}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-3">
