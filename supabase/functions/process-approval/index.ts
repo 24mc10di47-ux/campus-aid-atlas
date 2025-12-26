@@ -11,18 +11,37 @@ interface ApprovalRequest {
   action: 'approve' | 'reject';
 }
 
+// Simple in-memory rate limiter (resets on function cold start)
+const rateLimiter = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;
+
+const checkRateLimit = (ip: string): boolean => {
+  const now = Date.now();
+  const requests = rateLimiter.get(ip) || [];
+  const recentRequests = requests.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false; // Rate limit exceeded
+  }
+  
+  recentRequests.push(now);
+  rateLimiter.set(ip, recentRequests);
+  return true;
+};
+
 // Input validation
 const validateInput = (token: unknown, action: unknown): { valid: boolean; error?: string } => {
   if (typeof token !== 'string' || token.length === 0 || token.length > 100) {
-    return { valid: false, error: 'Invalid token format' };
+    return { valid: false, error: 'Invalid request' };
   }
   // UUID format validation
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(token)) {
-    return { valid: false, error: 'Invalid token format' };
+    return { valid: false, error: 'Invalid request' };
   }
   if (action !== 'approve' && action !== 'reject') {
-    return { valid: false, error: 'Invalid action - must be "approve" or "reject"' };
+    return { valid: false, error: 'Invalid request' };
   }
   return { valid: true };
 };
@@ -33,6 +52,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      console.warn(`Rate limit exceeded for IP: ${clientIp}`);
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -50,23 +79,27 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Processing approval:", { token, action });
+    console.log("Processing approval request from IP:", clientIp);
 
-    // Find the pending approval
+    // Find the pending approval (with expiration check - 30 days)
     const { data: approval, error: findError } = await supabase
       .from("pending_approvals")
       .select("*")
       .eq("approval_token", token)
       .eq("status", "pending")
+      .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // 30 days expiry
       .maybeSingle();
 
     if (findError) {
       console.error("Error finding approval:", findError);
-      throw findError;
+      return new Response(JSON.stringify({ error: "Processing failed. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!approval) {
-      return new Response(JSON.stringify({ error: "Invalid or already processed approval token" }), {
+      return new Response(JSON.stringify({ error: "This approval link is invalid, expired, or already processed." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,7 +114,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateApprovalError) {
       console.error("Error updating approval:", updateApprovalError);
-      throw updateApprovalError;
+      return new Response(JSON.stringify({ error: "Processing failed. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Update the actual item status
@@ -93,7 +129,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateItemError) {
       console.error("Error updating item:", updateItemError);
-      throw updateItemError;
+      return new Response(JSON.stringify({ error: "Processing failed. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`Successfully ${action}ed ${approval.item_type} ${approval.item_id}`);
@@ -105,10 +144,10 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in process-approval function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Processing failed. Please try again." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
