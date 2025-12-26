@@ -11,6 +11,22 @@ interface ApprovalRequest {
   action: 'approve' | 'reject';
 }
 
+// Input validation
+const validateInput = (token: unknown, action: unknown): { valid: boolean; error?: string } => {
+  if (typeof token !== 'string' || token.length === 0 || token.length > 100) {
+    return { valid: false, error: 'Invalid token format' };
+  }
+  // UUID format validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(token)) {
+    return { valid: false, error: 'Invalid token format' };
+  }
+  if (action !== 'approve' && action !== 'reject') {
+    return { valid: false, error: 'Invalid action - must be "approve" or "reject"' };
+  }
+  return { valid: true };
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,7 +37,18 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { token, action }: ApprovalRequest = await req.json();
+    const body = await req.json();
+    const { token, action } = body;
+    
+    // Validate inputs
+    const validation = validateInput(token, action);
+    if (!validation.valid) {
+      console.error("Validation failed:", validation.error);
+      return new Response(JSON.stringify({ error: validation.error }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log("Processing approval:", { token, action });
 
